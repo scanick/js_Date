@@ -1,6 +1,9 @@
 (function(self) {
 
 	self.init = function() {
+		$(window).resize(function(){
+			engin.events( 'resizeWindow');
+		});
 		addEventListener("keydown", function(event) {
 			switch(event.keyCode){
 				case 32: /*to do*/ break;//key space
@@ -12,10 +15,10 @@
 			}
 		});
 		$('#field').mousemove(function(event){
-			engin.events( "mousemove", [event.clientX, event.clientY] );
+			engin.events( 'mousemove', [event.clientX, event.clientY] );
 		});
 		$('#field').click(function(event){
-			engin.events( "mouseClick", [event.clientX, event.clientY]);
+			engin.events( 'mouseClick', [event.clientX, event.clientY]);
 		});
 		/* $('#home').click(function(event){
 			location.href = '/';

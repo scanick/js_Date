@@ -46,8 +46,8 @@
 			console.log(hours + ':' + minutes + ':' + seconds);
 		};
 		
-		this.draw = function(){
-			draw();
+		this.draw = function(mod){
+			draw(mod);
 		};
 		
 
@@ -55,7 +55,16 @@
 		* private function
 		**========================================================================================================*/
 		var draw = function(mod){//
-
+			var mode = mod || 'init';
+			switch(mode){
+				case 'init': 
+						
+					break;
+				case 'redraw': 
+						
+					break;
+				default: break;
+			}
 		}.bind(this);
 	};
 
@@ -73,13 +82,18 @@
 		clock = new classClock().init();
 	
 		clear();
+		console.log(field.fWidth + 'x' + field.fHeight);
 	};
 
 	self.events = function(e, data){
 		switch(e){
-			case "mousemove":
+			case 'resizeWindow':
+				field.fWidth = window.innerWidth; field.fHeight = window.innerHeight;
+				console.log(field.fWidth + 'x' + field.fHeight);
 				break;
-			case "mouseClick":
+			case 'mousemove':
+				break;
+			case 'mouseClick':
 				//year.ingoing(data);
 				break;
 			default: break;
@@ -102,7 +116,7 @@
 		switch(obj.getType()){
 			case '':
 				break;
-			case " ":
+			case ' ':
 				break;
 			default: break;
 		}
