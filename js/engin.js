@@ -4,16 +4,20 @@
 **===============================================================================================================*/
 	let ctx;
 
-	const timeout = 1000, fps = 5, dt = timeout/fps;// число кадров в секунду
+	const timeout = 1000, fps = 10, dt = timeout/fps;// число кадров в секунду
 	let gDate = new Date(); //дата/время
+	let arrHours = [];
+	let arrMinutes = [];
+	let arrSecond = [];
 
 
 	let Colors = {
 		ground: '#e8e8e8',//Цвет фона
 		fontMonth: '#000000',//цвет шрифта
-		scoreboard: ['#444444', '#cccccc'],
-		hours: ['#110000', '#ff99aa', '#881122', '#440011', '#000000'],
-		minutes: ['#0080ff', '#4000ff'],
+		scoreboard: ['#444444', '#cccccc'],//табло часов
+		hours: ['#110000', '#ff99aa', '#881122', '#440011', '#000000'],//Часовая спираль
+		minutes: ['#0080ff', '#4000ff'],//Минутный указатель
+		seconds:['#00ff80', '#00ff40'],//Секундная стрелка
 	};
 
 	let field = {
@@ -25,6 +29,7 @@
 		coeffSpiral: 4,					// Доля на которую уменьшится радиус спирали за целый поворот
 		hHours: 12,						// Высота часовой спирали
 		hMinutes: 12,					// Высота минутного указателя
+		hSecond: 42,					// Высота секундной стрелки
 		rExternal: 0,					// Внешний радиус календаря
 		rClock: 0,						// Внешний радиус часов
 		init: function() {
@@ -39,53 +44,31 @@
 	};
 
 /*===============================================================================================================
-* private Class Clock
+* private Class Year
 **===============================================================================================================*/
-	function classClock(){
+	function classYear(){
 		/*=======================================================================================================
 		* private variables
 		**=======================================================================================================*/
-		let self = this;
-		let hours, minutes, seconds;
-		let hSpiral = [];
-		let hAngle = Math.PI/12;
-		
+		var self = this;
+		var now;
+		var year;
+		var months = [ [0, 'Январь', 31], [1, 'Февраль', 28], [2, 'Март', 31],
+					[3, 'Апрель', 30], [4, 'Май', 31], [5, 'Июнь', 30],
+					[6, 'Июль', 31], [7, 'Август', 31], [8, 'Сентябрь', 30],
+					[9, 'Октябрь', 31], [10, 'Ноябрь', 30], [11, 'Декабрь', 31] ];
+		var months_list = [];//Массив месяцев
 		/*========================================================================================================
 		* public function
 		**========================================================================================================*/
 		this.init = function(){
-			/* hours   = gDate.getHours();
-			minutes = gDate.getMinutes();
-			seconds = gDate.getSeconds();
-			console.log(hours + ':' + minutes + ':' + seconds); */
-		};
-		this.getTime = function(){
-			hours   = new Date().getHours();
-			minutes = new Date().getMinutes();
-			seconds = new Date().getSeconds();
-			
-			return hours + ':' + minutes + ':' + seconds;
-		};
-		this.draw = function(mod){
-			draw(mod);
-		};
-		
-
-		/*========================================================================================================
-		* private function
-		**========================================================================================================*/
-		let draw = function(mod){//
-			let mode = mod || 'init';
-			switch(mode){
-				case 'init': 
-						
-					break;
-				case 'redraw': 
-						
-					break;
-				default: break;
+			now = new Date();
+			year = now.getFullYear();
+			if( (year % 4 == 0) && (year % 100 != 0 || year % 400 == 0)){//Если год високосный
+				//amount_of_days = 366;
+				months[1][2] = 29;//в феврале будет 29 дней
 			}
-		}.bind(this);
+		}
 	};
 
 /*===============================================================================================================
@@ -99,12 +82,10 @@
 		canva.height = field.fHeight;
 		ctx = canva.getContext('2d');
 	
-		clock = new classClock();
-		clock.init();
-	
-		clear();
-		draw();
-		//console.log(field.fWidth + 'x' + field.fHeight);
+		initMinutes();
+		initSecond();
+		/* clear();
+		draw(); */
 		animation();
 	};
 
@@ -112,6 +93,8 @@
 		switch(e){
 			case 'resizeWindow':
 				field.init();
+				initMinutes();
+				initSecond();
 				//field.fWidth = window.innerWidth; field.fHeight = window.innerHeight;
 				console.log(field.fWidth + 'x' + field.fHeight);
 				break;
@@ -147,15 +130,17 @@
 			drawScoreboard();
 		//Спираль часовая
 			drawHours();
-		//Стрелка минутная
+		//Указатель минутный
 			drawMinutes();
+		//Стрелка секундная
+			drawSecond();
 	};
 
 	drawScoreboard = function(){//Табло часов
 		ctx.shadowBlur = 10;
 		ctx.shadowColor = "black";
 		//createRadialGradient(X_star, Y_start, Radius_inner, X_end, Y_end, Radius_external)
-		let grdr = ctx.createRadialGradient(field.center[0],field.center[1], 20, field.center[0], field.center[1], field.rClock);
+		let grdr = ctx.createRadialGradient(field.center[0],field.center[1], 10, field.center[0], field.center[1], field.rClock);
 		grdr.addColorStop( 0, Colors.scoreboard[0] );//Color_start
 		grdr.addColorStop( 1, Colors.scoreboard[1] );//Color_end
 		ctx.fillStyle = grdr; // меняем цвет
@@ -166,6 +151,9 @@
 		ctx.fill();
 	};
 
+	initHours = function(){
+		
+	};
 	drawHours = function(){//Спираль часовая
 		let h = new Date().getHours(), m = new Date().getMinutes();
 		let drH = field.rClock/(field.coeffSpiral*12);	 //За 12 часов радиус уменьшится на field.coeffSpiral
@@ -246,38 +234,127 @@
 		}
 	};
 
-	drawMinutes = function(){
-		let h = new Date().getHours(), m = new Date().getMinutes();
-		ctx.shadowBlur  = 6;
-		ctx.shadowColor = Colors.minutes[1];
-		let drH = field.rClock/field.coeffSpiral;	 //За 12 часов радиус уменьшится на field.coeffSpiral
+	initMinutes = function(){
+		arrMinutes.splice(1, arrSecond.length);//очистить массив
+		let drH = field.rClock/field.coeffSpiral;		 //За 12 часов радиус уменьшится на field.coeffSpiral
 		let drM = field.rClock/(field.coeffSpiral*60);	 //За 60 минут радиус уменьшится на field.coeffSpiral
 		let daM = Math.PI/30;							 //угол одной минуты
 		let daMp = daM/3;								 //угол указателя минуты
-		let dr = field.rClock - 3*drH/5 - m*drM;
-		let drp = h < 12 ? field.hMinutes/2 : -field.hMinutes/2;
-		let cos = Math.cos(field.startAngle + m*daM);
-		let sin = Math.sin(field.startAngle + m*daM);
-		let x1 = field.center[0] + (dr + drp) * cos;
-		let y1 = field.center[1] + (dr + drp) * sin;
-		cos = Math.cos(field.startAngle + m*daM - daMp);
-		sin = Math.sin(field.startAngle + m*daM - daMp);
-		let x2 = field.center[0] + (dr - drp) * cos;
-		let y2 = field.center[1] + (dr - drp) * sin;
-		cos = Math.cos(field.startAngle + m*daM + daMp);
-		sin = Math.sin(field.startAngle + m*daM + daMp);
-		let x3 = field.center[0] + (dr - drp) * cos;
-		let y3 = field.center[1] + (dr - drp) * sin;
+		for(let m = 0; m < 60; m++){
+			let position = [];
+			k = m==0 ? 60 : m;
+			let dr = field.rClock - 2*drH/3 - k*drM;
+			
+			let cos = Math.cos(field.startAngle + k*daM);
+			let sin = Math.sin(field.startAngle + k*daM);
+			let x0 = field.center[0] + (dr + field.hMinutes/2) * cos;
+			let y0 = field.center[1] + (dr + field.hMinutes/2) * sin;
+			let arr0 = [];
+			arr0[0] = x0; 	arr0[1] = y0;
+			position.push(arr0);
+			
+			cos = Math.cos(field.startAngle + k*daM - daMp);
+			sin = Math.sin(field.startAngle + k*daM - daMp);
+			let x1 = field.center[0] + (dr - field.hMinutes/2) * cos;
+			let y1 = field.center[1] + (dr - field.hMinutes/2) * sin;
+			let arr1 = [];
+			arr1[0] = x1; 	arr1[1] = y1;
+			position.push(arr1);
+			
+			cos = Math.cos(field.startAngle + k*daM + daMp);
+			sin = Math.sin(field.startAngle + k*daM + daMp);
+			let x2 = field.center[0] + (dr - field.hMinutes/2) * cos;
+			let y2 = field.center[1] + (dr - field.hMinutes/2) * sin;
+			let arr2 = [];
+			arr2[0] = x2; 	arr2[1] = y2;
+			position.push(arr2);
+			
+			arrMinutes.push(position);
+		}
+		console.log('minutes reinit');
+	};
+	drawMinutes = function(){//Указатель минутный
+		let m = new Date().getMinutes();
 		
+		ctx.shadowBlur  = 6;
+		ctx.shadowColor = Colors.minutes[1];
 		ctx.strokeStyle = Colors.minutes[0];
 		
 		ctx.beginPath();
-			ctx.moveTo( x1, y1 );
-			ctx.lineTo( x2, y2 );	ctx.lineTo( x3, y3 );	ctx.lineTo( x1, y1 );
+			ctx.moveTo( arrMinutes[m][0][0], arrMinutes[m][0][1] );
+			ctx.lineTo( arrMinutes[m][1][0], arrMinutes[m][1][1] );
+			ctx.lineTo( arrMinutes[m][2][0], arrMinutes[m][2][1] );
+			ctx.lineTo( arrMinutes[m][0][0], arrMinutes[m][0][1] );
 		ctx.closePath();
 		ctx.lineCap = "round";
 		ctx.lineWidth = 2;
 		ctx.stroke();
+	};
+
+	initSecond = function(){
+		arrSecond.splice(1, arrSecond.length);//очистить массив
+		let drH = field.rClock/field.coeffSpiral;	 	 //За 12 часов радиус уменьшится на field.coeffSpiral
+		let drS = field.rClock/(field.coeffSpiral*60);	 //За 60 минут радиус уменьшится на field.coeffSpiral
+		let daS = Math.PI/30;							 //угол одной секунды
+		let daSp = 2*daS;								 //угол секндной стрелки
+		for (let s = 0; s < 60; s++){
+			let position = [];
+			let k = s==0 ? 60: s;
+			
+			let dr = field.rClock - 15*drH/9 - k*drS;
+			let cos = Math.cos(field.startAngle + k*daS);
+			let sin = Math.sin(field.startAngle + k*daS);
+			let x0 = field.center[0] + (dr ) * cos;
+			let y0 = field.center[1] + (dr ) * sin;
+			let arr0 = [];
+			arr0[0] = x0; 	arr0[1] = y0;
+			position.push(arr0);
+			
+			cos = Math.cos(field.startAngle + k*daS + daSp);
+			sin = Math.sin(field.startAngle + k*daS + daSp);
+			let x1 = field.center[0] + (- 3*field.hSecond/4) * cos;
+			let y1 = field.center[1] + (- 3*field.hSecond/4) * sin;
+			let arr1 = [];
+			arr1[0] = x1; 	arr1[1] = y1;
+			position.push(arr1);
+			
+			cos = Math.cos(field.startAngle + k*daS);
+			sin = Math.sin(field.startAngle + k*daS);
+			let x2 = field.center[0] + (- field.hSecond/5) * cos;
+			let y2 = field.center[1] + (- field.hSecond/5) * sin;
+			let arr2 = [];
+			arr2[0] = x2; 	arr2[1] = y2;
+			position.push(arr2);
+			
+			cos = Math.cos(field.startAngle + k*daS - daSp);
+			sin = Math.sin(field.startAngle + k*daS - daSp);
+			let x3 = field.center[0] + (- 3*field.hSecond/4) * cos;
+			let y3 = field.center[1] + (- 3*field.hSecond/4) * sin;
+			let arr3 = [];
+			arr3[0] = x3; 	arr3[1] = y3;
+			position.push(arr3);
+			
+			arrSecond.push(position);
+		}
+		console.log('second reinit');
+	};
+	drawSecond = function(){//Стрелка секундная
+		let s = new Date().getSeconds();
+		ctx.shadowBlur  = 6;
+		ctx.shadowColor = Colors.seconds[1];
+		ctx.strokeStyle = Colors.seconds[0];
+		
+		ctx.beginPath();
+			ctx.moveTo( arrSecond[s][0][0], arrSecond[s][0][1] );
+			ctx.lineTo( arrSecond[s][1][0], arrSecond[s][1][1] );
+			ctx.lineTo( arrSecond[s][2][0], arrSecond[s][2][1] );
+			ctx.lineTo( arrSecond[s][3][0], arrSecond[s][3][1] );
+			ctx.lineTo( arrSecond[s][0][0], arrSecond[s][0][1] );
+		ctx.closePath();
+		ctx.lineCap = "round";
+		ctx.lineWidth = 2;
+		ctx.stroke();
+		//console.log('draw seconds');
 	};
 
 	function animation(){
@@ -285,6 +362,7 @@
 			requestAnimationFrame(animation);
 			clear();
 			draw();
+			
 		}, dt);
 	}
 
